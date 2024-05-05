@@ -22,4 +22,4 @@ jobs:
           cd ${{ secrets.WORK_DIR }}
           git pull
           npm install
-          npm build
+          npm run build
