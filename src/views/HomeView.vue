@@ -27,15 +27,15 @@
         >
         </v-text-field>
         <v-spacer></v-spacer>
-        <v-btn v-if="!sock" @click="handleConnect" type="submit">Connect!</v-btn>
-        <v-btn v-if="sock" @click="handleClose">Disconnect!</v-btn>
+        <v-btn v-if="!connected" @click="handleConnect" type="submit">Connect!</v-btn>
+        <v-btn v-if="connected" @click="handleClose">Disconnect!</v-btn>
       </v-toolbar>
-      <v-card v-model="sockStatus" class="text-right text-blue-darken-1 mr-1" variant="plain">
-        Socket Status: {{ sockStatus }}
+      <v-card class="text-right text-blue-darken-1 mr-1" variant="plain">
+        Socket Status: {{ connected ? "Connected" : "Disconnected" }}
       </v-card>
     </div>
     <div id="mudbox" class="overflow-auto flex-grow-1 pl-5">
-      <div class="content ma-0 pa-0" v-for="msg in messages" v-html="msg"></div>
+      <div class="content ma-0 pa-0" v-for="msg in messages" :key="msg.id" v-html="msg.html"></div>
     </div>
     <div class="shrink">
       <v-text-field
@@ -60,92 +60,26 @@
 
 <script setup>
 import { nextTick, ref, watch } from 'vue'
-const sock = ref(null)
-const sockStatus = ref('Disconnected')
+import { storeToRefs } from 'pinia'
+import { useMudConnectStore } from '@/stores/mudconnect.js'
+
+const mud = useMudConnectStore()
+
+const { connected, messages, lastMessage, commands } = storeToRefs(mud)
+
 const commandLine = ref(null)
 const commandLineType = ref('text')
-const messages = ref([])
+
 const message = ref('')
 const password = ref('')
 const character = ref('')
 const showPW = ref(false)
 const sendLogin = ref(false)
 
-const commandMessageBuilder = (message) => {
-  return JSON.stringify({
-    type: 'command',
-    message: message
-  })
-}
-
-const controlMessageBuilder = (message) => {
-  return JSON.stringify({
-    type: 'control',
-    message: message
-  })
-}
-
-const sendCharName = () => {
-  sock.value.send(commandMessageBuilder(character.value))
-}
-
-const sendPassword = () => {
-  sock.value.send(commandMessageBuilder(password.value))
-}
-
-const receiveData = (ev) => {
-  const PROMPT_PATTERN_CHARACTER = /By what name do you wish to be known\?$/
-  const PROMPT_PATTERN_PASSWORD = /^Password:$/
-  let msg = JSON.parse(ev.data)
-
-  // We can ignore these for now
-  if (msg.type == 'control') {
-    return
-  }
-
-  messages.value.push(msg.html + '\n')
-
-  if (sendLogin.value) {
-    if (PROMPT_PATTERN_CHARACTER.test(msg.text.trim())) {
-      sendCharName()
-      messages.value.push(`<div class='text-blue-darken-1'>${character.value}</div>`)
-    } else if (PROMPT_PATTERN_PASSWORD.test(msg.text.trim())) {
-      sendPassword()
-      messages.value.push(
-        `<div class='text-blue-darken-1'>${'*'.repeat(password.value.length)}</div>`
-      )
-    }
-  } else if (PROMPT_PATTERN_PASSWORD.test(msg.text.trim())) {
-    commandLineType.value = 'password'
-    message.value = ''
-  }
-}
-
-const connect = () => {
-  sock.value = new WebSocket('wss://socket.zahalan.com')
-  //sock.value = new WebSocket('ws://localhost:9181')
-
-  sock.value.onmessage = receiveData
-  sock.value.onclose = () => {
-    sockStatus.value = 'Closed'
-    sock.value = null
-  }
-  sock.value.onopen = () => {
-    sockStatus.value = 'Connected'
-    console.log('connected')
-
-    let clockId = setInterval(() => {
-      if (sock.value && sock.value.readyState == 1) {
-        sock.value.send(controlMessageBuilder('ping'))
-      } else {
-        clearInterval(clockId)
-      }
-    }, 3000)
-  }
-}
+let historyPointer = -1
 
 const handleConnect = () => {
-  connect()
+  mud.connect()
   sendLogin.value = password.value != '' && character.value != ''
 
   nextTick(() => {
@@ -154,15 +88,28 @@ const handleConnect = () => {
 }
 
 const handleClose = () => {
-  sock.value.close()
+  mud.disconnect()
 }
 
 watch(
-  () => messages.value,
-  async (msgs) => {
-    if (msgs.length > MAX_MESSAGE_HISTORY) {
-      msgs.shift()
+  lastMessage,
+  (newMessage) => {
+    const PROMPT_PATTERN_CHARACTER = /By what name do you wish to be known\?$/
+    const PROMPT_PATTERN_PASSWORD = /^Password:$/
+
+    let rawMessage = newMessage.text.trim()
+
+    if (sendLogin.value) {
+      if (PROMPT_PATTERN_CHARACTER.test(rawMessage)) {
+        mud.send(character.value, false)
+      } else if (PROMPT_PATTERN_PASSWORD.test(rawMessage)) {
+        mud.send(password.value, false)
+      }
+    } else if (PROMPT_PATTERN_PASSWORD.test(rawMessage)) {
+      commandLineType.value = 'password'
+      message.value = ''
     }
+
     nextTick(() => {
       let mudbox = document.getElementById('mudbox')
       mudbox.scrollTop = mudbox.scrollHeight
@@ -171,57 +118,47 @@ watch(
   { deep: true }
 )
 
-const history = []
-const MAX_COMMAND_HISTORY = 50
-const MAX_MESSAGE_HISTORY = 25
-let historyPointer = -1
-
 const handleScroll = (inc) => {
-  if (history.length > 0) {
-    historyPointer = (historyPointer + inc) % history.length
+  if (commands.value.length > 0) {
+    historyPointer = (historyPointer + inc) % commands.value.length
 
     if (historyPointer < 0) {
-      historyPointer = history.length - 1
+      historyPointer = commands.value.length - 1
     }
 
-    message.value = history[historyPointer]
+    message.value = commands.value[historyPointer]
     nextTick(() => {
       commandLine.value.select()
     })
   }
 }
 
-const wrapCommand = (msg, type) => {
-  return `<${type} class='text-blue-darken-1'>${msg}</${type}`
+const wrapCommand = (msg, type="span") => {
+  return `<${type} class='text-blue-darken-1'>${msg}</${type}>`
 }
 
+// The purpose of this function is to append the command to the Chat Window
+// so we have visual feedback.
 const addHistory = (msg) => {
-  if (msg.trim() != '') {
-    history.push(msg)
-    if (history.length > MAX_COMMAND_HISTORY) {
-      history.shift()
-    }
-    historyPointer = history.length - 1
-  }
-
-  let newMessage = messages.value[messages.value.length - 1].concat(wrapCommand(msg))
-  messages.value[messages.value.length - 1] = newMessage
+  let newMessageText = messages.value[messages.value.length - 1].html.concat(wrapCommand(msg))
+  messages.value[messages.value.length - 1].html = newMessageText
 }
 
 const sendMessage = () => {
   let msg = message.value
 
-  if (commandLineType.value == 'password') {
+  // Don't save passwords in the outbound history
+  if(commandLineType.value == 'password') {
+    mud.send(msg, false)
+    message.value = ""
     commandLineType.value = 'text'
-    message.value = ''
   } else {
+    mud.send(msg)
     addHistory(msg)
   }
 
-  if (sock.value) {
-    sock.value.send(commandMessageBuilder(msg))
-    commandLine.value.select()
-  }
+  historyPointer = commands.value.length - 1
+  commandLine.value.select()
 }
 </script>
 
