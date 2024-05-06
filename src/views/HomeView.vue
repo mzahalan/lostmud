@@ -59,7 +59,7 @@
 </template>
 
 <script setup>
-import { nextTick, ref, watch } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMudConnectStore } from '@/stores/mudconnect.js'
 
@@ -102,8 +102,10 @@ watch(
     if (sendLogin.value) {
       if (PROMPT_PATTERN_CHARACTER.test(rawMessage)) {
         mud.send(character.value, false)
+        addHistory(character.value)
       } else if (PROMPT_PATTERN_PASSWORD.test(rawMessage)) {
         mud.send(password.value, false)
+        addHistory('*'.repeat(password.value.length))
       }
     } else if (PROMPT_PATTERN_PASSWORD.test(rawMessage)) {
       commandLineType.value = 'password'
@@ -117,6 +119,11 @@ watch(
   },
   { deep: true }
 )
+
+onMounted(() => {
+  let mudbox = document.getElementById('mudbox')
+  mudbox.scrollTop = mudbox.scrollHeight
+})
 
 const handleScroll = (inc) => {
   if (commands.value.length > 0) {
@@ -140,8 +147,8 @@ const wrapCommand = (msg, type="span") => {
 // The purpose of this function is to append the command to the Chat Window
 // so we have visual feedback.
 const addHistory = (msg) => {
-  let newMessageText = messages.value[messages.value.length - 1].html.concat(wrapCommand(msg))
-  messages.value[messages.value.length - 1].html = newMessageText
+  messages.value[messages.value.length -1].text = messages.value[messages.value.length -1].text.concat(msg)
+  messages.value[messages.value.length -1].html = messages.value[messages.value.length -1].html.concat(wrapCommand(msg))
 }
 
 const sendMessage = () => {

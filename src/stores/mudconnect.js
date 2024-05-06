@@ -4,14 +4,14 @@ import { defineStore } from 'pinia'
 const MAX_COMMAND_HISTORY = 50
 const MAX_MESSAGE_HISTORY = 25
 
-const controlMessageBuilder = (message) => {
+function controlMessageBuilder(message) {
     return JSON.stringify({
       type: 'control',
       message: message
     })
 }
 
-const commandMessageBuilder = (message) => {
+function commandMessageBuilder(message) {
     return JSON.stringify({
       type: 'command',
       message: message
@@ -20,6 +20,7 @@ const commandMessageBuilder = (message) => {
 
 export const useMudConnectStore = defineStore('mudconnect', () => {
   let messageCounter = 0
+
   const connected = ref(false)
   const sock = ref(null)
   const messages = ref([])
@@ -31,14 +32,16 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
   
     sock.value.onmessage = (messageRx) => {
         let msg = JSON.parse(messageRx.data)
-        msg.id = messageCounter
-        messageCounter += 1
-
+        
         // We can ignore these for now
         if (msg.type == 'control') {
           console.log(msg.text)
+          return
         }
-      
+
+        msg.id = messageCounter
+        messageCounter += 1
+
         messages.value.push(msg)
         if(messages.value.length > MAX_MESSAGE_HISTORY) {
             messages.value.shift()
