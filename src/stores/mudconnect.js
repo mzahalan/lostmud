@@ -28,7 +28,7 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
   const commands = ref([])
 
   function connect() {
-    sock.value = new WebSocket('wss://socket.zahalan.com')
+    sock.value = new WebSocket('wss://socket.lostmud.com')
   
     sock.value.onmessage = (messageRx) => {
         let msg = JSON.parse(messageRx.data)
