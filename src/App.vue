@@ -30,7 +30,7 @@ const toggleTheme = () => {
 
 const drawer = ref(false)
 
-document.title = 'Zahalan.com'
+document.title = 'The Lost Mud'
 </script>
 
 <style scoped></style>
