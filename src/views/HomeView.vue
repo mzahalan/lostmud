@@ -32,6 +32,8 @@
       </v-toolbar>
       <v-card class="text-right text-blue-darken-1 mr-1" variant="plain">
         Socket Status: {{ connected ? "Connected" : "Disconnected" }}
+        <v-spacer></v-spacer>
+        Clients: {{ connected ? numClients : "~" }}
       </v-card>
     </div>
     <div id="mudbox" class="overflow-auto flex-grow-1 pl-5">
@@ -65,7 +67,7 @@ import { useMudConnectStore } from '@/stores/mudconnect.js'
 
 const mud = useMudConnectStore()
 
-const { connected, messages, lastMessage, commands } = storeToRefs(mud)
+const { connected, messages, lastMessage, commands, numClients } = storeToRefs(mud)
 
 const commandLine = ref(null)
 const commandLineType = ref('text')

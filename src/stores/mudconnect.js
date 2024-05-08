@@ -26,16 +26,20 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
   const messages = ref([])
   const lastMessage = ref(null)
   const commands = ref([])
+  const numClients = ref(0)
 
   function connect() {
     sock.value = new WebSocket('wss://socket.lostmud.com')
+    //sock.value = new WebSocket('ws://localhost:9081')
   
     sock.value.onmessage = (messageRx) => {
         let msg = JSON.parse(messageRx.data)
         
         // We can ignore these for now
         if (msg.type == 'control') {
-          console.log(msg.text)
+          if(msg.text == 'pong') {
+            numClients.value = msg.numClients
+          }
           return
         }
 
@@ -57,6 +61,7 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
     sock.value.onopen = () => {
       connected.value = true
       console.log('connected')
+      sock.value.send(controlMessageBuilder('ping'))
   
       let clockId = setInterval(() => {
         if (sock.value && sock.value.readyState == 1) {
@@ -84,5 +89,5 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
     }
   }
 
-  return { connected, messages, lastMessage, commands, connect, disconnect, send }
+  return { connected, messages, lastMessage, commands, numClients, connect, disconnect, send }
 })
