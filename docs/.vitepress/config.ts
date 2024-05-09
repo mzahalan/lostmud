@@ -4,6 +4,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: "The Lost Manual",
   description: "The Missing Manual for Mud Development",
+  base: "/docs/",
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
