@@ -51,6 +51,7 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
             messages.value.shift()
         }
         lastMessage.value = msg
+        notifyListeners(msg)
     }
     
     sock.value.onclose = () => {
@@ -89,5 +90,18 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
     }
   }
 
-  return { connected, messages, lastMessage, commands, numClients, connect, disconnect, send }
+
+  //Super Cheap Event Handling
+  const callbacks = []
+  function addListener(listener) {
+    callbacks.push(listener)
+  }
+
+  function notifyListeners(msg) {
+    for(let i = 0; i < callbacks.length; i++) {
+      callbacks[i](msg)
+    }
+  }
+
+  return { connected, messages, lastMessage, commands, numClients, connect, disconnect, send, addListener }
 })
