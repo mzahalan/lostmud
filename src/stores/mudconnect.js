@@ -44,6 +44,7 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
         }
 
         msg.id = messageCounter
+        msg.response = ""
         messageCounter += 1
 
         messages.value.push(msg)
@@ -83,6 +84,7 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
     sock.value.send(commandMessageBuilder(message))
 
     if(saveToHistory && message.trim() != '') {
+        messages.value[messages.value.length -1].response = messages.value[messages.value.length-1].response.concat(message)
         commands.value.push(message)
         if(commands.value.length > MAX_COMMAND_HISTORY) {
             commands.value.shift()

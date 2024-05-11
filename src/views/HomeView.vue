@@ -37,7 +37,10 @@
       </v-card>
     </div>
     <div id="mudbox" class="overflow-auto flex-grow-1 pl-5">
-      <div class="content ma-0 pa-0" v-for="msg in messages" :key="msg.id" v-html="msg.html"></div>
+      <div class="ma-0 pa-0" v-for="msg in messages" :key="msg.id">
+        <span class="content ma-0 pa-0" v-html="msg.html"></span>
+        <span class="content ma-0 pa-0 text-blue-darken-1" v-if="msg.response">{{ msg.response }}</span>
+      </div>
     </div>
     <div class="shrink">
       <v-text-field
@@ -93,6 +96,8 @@ const handleClose = () => {
   mud.disconnect()
 }
 
+// TODO - Move this to triggers (refactor triggers to be a store)
+// and/or refactor to be a callback, not a watcher.
 watch(
   lastMessage,
   (newMessage) => {
@@ -104,10 +109,8 @@ watch(
     if (sendLogin.value) {
       if (PROMPT_PATTERN_CHARACTER.test(rawMessage)) {
         mud.send(character.value, false)
-        addHistory(character.value)
       } else if (PROMPT_PATTERN_PASSWORD.test(rawMessage)) {
         mud.send(password.value, false)
-        addHistory('*'.repeat(password.value.length))
       }
     } else if (PROMPT_PATTERN_PASSWORD.test(rawMessage)) {
       commandLineType.value = 'password'
@@ -142,17 +145,6 @@ const handleScroll = (inc) => {
   }
 }
 
-const wrapCommand = (msg, type="span") => {
-  return `<${type} class='text-blue-darken-1'>${msg}</${type}>`
-}
-
-// The purpose of this function is to append the command to the Chat Window
-// so we have visual feedback.
-const addHistory = (msg) => {
-  messages.value[messages.value.length -1].text = messages.value[messages.value.length -1].text.concat(msg)
-  messages.value[messages.value.length -1].html = messages.value[messages.value.length -1].html.concat(wrapCommand(msg))
-}
-
 const sendMessage = () => {
   let msg = message.value
 
@@ -163,7 +155,6 @@ const sendMessage = () => {
     commandLineType.value = 'text'
   } else {
     mud.send(msg)
-    addHistory(msg)
   }
 
   historyPointer = commands.value.length - 1
