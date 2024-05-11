@@ -1,10 +1,15 @@
 <template>
     <v-expansion-panel title="Triggers">
     <v-expansion-panel-text>
-        <v-list class="ma-0 pa-0" slim>
-            <v-list-item v-for="trigger in triggers" :key="trigger.name" density="compact">
+        <v-list class="ma-0 pa-0" lines="one" nav>
+            <v-list-item v-for="trigger in triggers" :key="trigger.name" :value="trigger.name" density="compact">
                 <template v-slot:append><v-chip pill>{{ trigger.count }}</v-chip></template>
-                <v-checkbox :label="trigger.name" v-model="trigger.enabled"></v-checkbox>
+                <template v-slot:prepend>
+                    <v-list-item-action start>
+                        <v-checkbox-btn v-model="trigger.enabled"></v-checkbox-btn>
+                    </v-list-item-action>
+                </template>
+                <v-list-item-title>{{ trigger.name }}</v-list-item-title>
             </v-list-item>
         </v-list>
     </v-expansion-panel-text>
