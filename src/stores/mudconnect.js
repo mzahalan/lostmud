@@ -114,11 +114,15 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
     callbacks.push(listener)
   }
 
+  function removeListener(listener) {
+    callbacks.splice(callbacks.indexOf(listener) >>> 0, 1);
+  }
+
   function notifyListeners(msg) {
     for(let i = 0; i < callbacks.length; i++) {
       callbacks[i](msg)
     }
   }
 
-  return { connected, messages, lastMessage, commands, numClients, connect, disconnect, send, addListener }
+  return { connected, messages, lastMessage, commands, numClients, connect, disconnect, send, addListener, removeListener }
 })

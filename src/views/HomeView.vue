@@ -75,13 +75,12 @@ const message = ref('')
 const password = ref('')
 const character = ref('')
 const showPW = ref(false)
-const sendLogin = ref(false)
 
 let historyPointer = -1
 
 const handleConnect = () => {
+  mud.addListener(checkPW)
   mud.connect(character.value, password.value)
-  sendLogin.value = password.value != '' && character.value != ''
 
   nextTick(() => {
     commandLine.value.focus()
@@ -92,18 +91,17 @@ const handleClose = () => {
   mud.disconnect()
 }
 
-// TODO - This seems inefficient.
-// If we had real event handling, we could register in 
-// handleConnect and unregister at the end of this function
-mud.addListener(async (msg) => {
+const checkPW = async (msg) => {
   const PROMPT_PATTERN_PASSWORD = /^Password:$/
 
   let rawMessage = msg.text.trim()
   if(PROMPT_PATTERN_PASSWORD.test(rawMessage)) {
-      commandLineType.value = 'password'
-      message.value = ''
+    commandLineType.value = 'password'
+    message.value = ''
+
+    mud.removeListener(checkPW)   // Don't need to check again.
   }
-})
+}
 
 const handleScroll = (inc) => {
   if (commands.value.length > 0) {
