@@ -36,12 +36,7 @@
         Clients: {{ connected ? numClients : "~" }}
       </v-card>
     </div>
-    <div id="mudbox" class="overflow-auto flex-grow-1 pl-5">
-      <div class="ma-0 pa-0" v-for="msg in messages" :key="msg.id">
-        <span class="content ma-0 pa-0" v-html="msg.html"></span>
-        <span class="content ma-0 pa-0 text-blue-darken-1" v-if="msg.response">{{ msg.response }}</span>
-      </div>
-    </div>
+    <MudBox></MudBox>
     <div class="shrink">
       <v-text-field
         ref="commandLine"
@@ -64,13 +59,14 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import MudBox from '@/components/MudBox.vue'
 import { useMudConnectStore } from '@/stores/mudconnect.js'
 
 const mud = useMudConnectStore()
 
-const { connected, messages, lastMessage, commands, numClients } = storeToRefs(mud)
+const { connected, commands, numClients } = storeToRefs(mud)
 
 const commandLine = ref(null)
 const commandLineType = ref('text')
@@ -84,7 +80,7 @@ const sendLogin = ref(false)
 let historyPointer = -1
 
 const handleConnect = () => {
-  mud.connect()
+  mud.connect(character.value, password.value)
   sendLogin.value = password.value != '' && character.value != ''
 
   nextTick(() => {
@@ -96,35 +92,17 @@ const handleClose = () => {
   mud.disconnect()
 }
 
-// TODO - Move this to triggers (refactor triggers to be a store)
-// Then add concept of 1-time trigger. Trigger goes away when it's not needed
-// to save processing.
-mud.addListener(async (message) => {
-  const PROMPT_PATTERN_CHARACTER = /By what name do you wish to be known\?$/
+// TODO - This seems inefficient.
+// If we had real event handling, we could register in 
+// handleConnect and unregister at the end of this function
+mud.addListener(async (msg) => {
   const PROMPT_PATTERN_PASSWORD = /^Password:$/
 
-  let rawMessage = message.text.trim()
-
-  if (sendLogin.value) {
-      if (PROMPT_PATTERN_CHARACTER.test(rawMessage)) {
-        mud.send(character.value, false)
-      } else if (PROMPT_PATTERN_PASSWORD.test(rawMessage)) {
-        mud.send(password.value, false)
-      }
-    } else if (PROMPT_PATTERN_PASSWORD.test(rawMessage)) {
+  let rawMessage = msg.text.trim()
+  if(PROMPT_PATTERN_PASSWORD.test(rawMessage)) {
       commandLineType.value = 'password'
       message.value = ''
-    }
-
-    nextTick(() => {
-      let mudbox = document.getElementById('mudbox')
-      mudbox.scrollTop = mudbox.scrollHeight
-    })
-})
-
-onMounted(() => {
-  let mudbox = document.getElementById('mudbox')
-  mudbox.scrollTop = mudbox.scrollHeight
+  }
 })
 
 const handleScroll = (inc) => {
@@ -160,7 +138,5 @@ const sendMessage = () => {
 </script>
 
 <style scoped>
-.content {
-  font-family: monospace;
-}
+
 </style>

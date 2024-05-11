@@ -4,6 +4,10 @@ import { defineStore } from 'pinia'
 const MAX_COMMAND_HISTORY = 50
 const MAX_MESSAGE_HISTORY = 25
 
+
+const PROMPT_PATTERN_CHARACTER = /By what name do you wish to be known\?$/
+const PROMPT_PATTERN_PASSWORD = /^Password:$/
+
 function controlMessageBuilder(message) {
     return JSON.stringify({
       type: 'control',
@@ -19,6 +23,7 @@ function commandMessageBuilder(message) {
 }
 
 export const useMudConnectStore = defineStore('mudconnect', () => {
+  
   let messageCounter = 0
 
   const connected = ref(false)
@@ -28,10 +33,10 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
   const commands = ref([])
   const numClients = ref(0)
 
-  function connect() {
+  function connect(username="", password="") {
     sock.value = new WebSocket('wss://socket.lostmud.com')
     //sock.value = new WebSocket('ws://localhost:9081')
-  
+
     sock.value.onmessage = (messageRx) => {
         let msg = JSON.parse(messageRx.data)
         
@@ -46,6 +51,16 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
         msg.id = messageCounter
         msg.response = ""
         messageCounter += 1
+
+        if (username && PROMPT_PATTERN_CHARACTER.test(msg.text.trim())) {
+            msg.response = username
+            send(username, false)
+            username = "" // Short circuit the pattern match
+        } else if (password && PROMPT_PATTERN_PASSWORD.test(msg.text.trim())) {
+            msg.response = "*".repeat(password.length)
+            send(password, false)
+            password = ""
+        }
 
         messages.value.push(msg)
         if(messages.value.length > MAX_MESSAGE_HISTORY) {
