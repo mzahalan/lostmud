@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref, watch } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMudConnectStore } from '@/stores/mudconnect.js'
 
@@ -97,16 +97,15 @@ const handleClose = () => {
 }
 
 // TODO - Move this to triggers (refactor triggers to be a store)
-// and/or refactor to be a callback, not a watcher.
-watch(
-  lastMessage,
-  (newMessage) => {
-    const PROMPT_PATTERN_CHARACTER = /By what name do you wish to be known\?$/
-    const PROMPT_PATTERN_PASSWORD = /^Password:$/
+// Then add concept of 1-time trigger. Trigger goes away when it's not needed
+// to save processing.
+mud.addListener(async (message) => {
+  const PROMPT_PATTERN_CHARACTER = /By what name do you wish to be known\?$/
+  const PROMPT_PATTERN_PASSWORD = /^Password:$/
 
-    let rawMessage = newMessage.text.trim()
+  let rawMessage = message.text.trim()
 
-    if (sendLogin.value) {
+  if (sendLogin.value) {
       if (PROMPT_PATTERN_CHARACTER.test(rawMessage)) {
         mud.send(character.value, false)
       } else if (PROMPT_PATTERN_PASSWORD.test(rawMessage)) {
@@ -121,9 +120,7 @@ watch(
       let mudbox = document.getElementById('mudbox')
       mudbox.scrollTop = mudbox.scrollHeight
     })
-  },
-  { deep: true }
-)
+})
 
 onMounted(() => {
   let mudbox = document.getElementById('mudbox')
