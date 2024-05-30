@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "local": "vite --mode dev_local",
     "build": "vite build",
     "preview": "vite preview",
     "test:unit": "vitest",

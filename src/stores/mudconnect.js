@@ -34,8 +34,11 @@ export const useMudConnectStore = defineStore('mudconnect', () => {
   const numClients = ref(0)
 
   function connect(username="", password="") {
-    sock.value = new WebSocket('wss://socket.lostmud.com')
-    //sock.value = new WebSocket('ws://localhost:9081')
+    if(import.meta.env.MODE == "dev_local") {
+      sock.value = new WebSocket('ws://localhost:9081')
+    } else {
+      sock.value = new WebSocket('wss://socket.lostmud.com')
+    }
 
     sock.value.onmessage = (messageRx) => {
         let msg = JSON.parse(messageRx.data)

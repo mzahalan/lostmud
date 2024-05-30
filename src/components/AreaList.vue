@@ -1,9 +1,12 @@
 <template>
-    <div class="area-list">
-        <div v-for="area in areas" :key="area.name">
-            <span>area.name</span>
-        </div>
-    </div>
+    <v-container class="area-list">
+        <v-row>
+        <v-card v-for="area in areas" :key="area.name">
+            <span>{{area.name}}</span>
+        </v-card>
+
+        </v-row>
+    </v-container>
 </template>
 
 <script setup>

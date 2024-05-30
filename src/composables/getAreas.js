@@ -1,5 +1,12 @@
 import {ref} from "vue"
-const URL_BASE = "https://socket.lostmud.com"
+
+let URL_BASE = ""
+if(import.meta.env.MODE == "dev_local") {
+    URL_BASE = "http://localhost:9081"
+} else {
+    URL_BASE = "https://socket.lostmud.com"
+}
+
 const AREA_PATH = "/api/areas"
 
 const getAreas = () => {
