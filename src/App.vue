@@ -16,7 +16,10 @@
     <v-main>
       <router-view></router-view>
     </v-main>
-    <v-footer app>LostMud.com | <router-link :to="{ name: 'home' }">Home</router-link> | <router-link :to="{ name: 'about' }">About</router-link></v-footer>
+    <v-footer app>LostMud.com 
+      | <router-link :to="{ name: 'home' }">Home</router-link> 
+      | <router-link :to="{ name: 'about' }">About</router-link>
+      | <router-link :to="{ name: 'explore' }">Explore</router-link></v-footer>
   </v-app>
 </template>
 
