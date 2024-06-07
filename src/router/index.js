@@ -21,6 +21,11 @@ const router = createRouter({
       path: '/explore',
       name: 'explore',
       component: () => import('../views/AreaView.vue')
+    },
+    {
+      path: '/mobs',
+      name: 'mobs',
+      component: () => import('../views/MobView.vue')
     }
   ]
 })
